@@ -77,7 +77,7 @@ I implemented the frontend and backend in one Next.js application. App Router pa
 | Database | PostgreSQL | Relational ownership constraints and durable event history |
 | ORM | Prisma 6 | Typed data access, migrations, indexes, and constraints |
 | Passwords | Node `scrypt` | Salted password derivation without storing plaintext passwords |
-| Charts | Recharts | Dashboard engagement visualization |
+| Charts | Recharts | Per-document engagement visualization |
 
 ## Data Model
 
@@ -250,7 +250,6 @@ The remaining test gap is browser-level coverage of the complete login, multipar
 ### Product Scope
 
 - I intentionally omitted signup, password reset, teams, roles, and multi-founder collaboration.
-- Analytics, settings, and global link-list routes are currently presentation placeholders.
 - The assessment credentials are public by design and must be replaced before any real deployment.
 
 ## Production Hardening
@@ -276,7 +275,6 @@ app/
   view/[token]/                Public investor experience
 components/
   dashboard/                   Dashboard and document workflow components
-  layout/                      Shared application navigation
   ui/                          Reusable UI primitives and Dealroom wordmark
 lib/
   auth.ts                      Server-side session lookup

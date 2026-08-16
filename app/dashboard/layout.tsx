@@ -17,7 +17,6 @@ export default async function DashboardLayout({
 
   return (
     <div className="min-h-dvh flex flex-col" style={{ background: "var(--bg-base)" }}>
-      {/* ── Nav ── */}
       <header
         className="sticky top-0 z-30 flex items-center justify-between px-8"
         style={{
@@ -26,12 +25,10 @@ export default async function DashboardLayout({
           height: 64,
         }}
       >
-        {/* Logo */}
         <Link href="/dashboard" className="flex items-center gap-2.5 shrink-0">
           <Logo size="md" />
         </Link>
 
-        {/* User */}
         <div className="flex items-center gap-3">
           <div
             className="w-8 h-8 rounded-md flex items-center justify-center text-xs font-bold"

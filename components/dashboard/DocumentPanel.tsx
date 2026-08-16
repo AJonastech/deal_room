@@ -302,14 +302,17 @@ export default function DocumentPanel({ doc, onClose, onChanged }: DocumentPanel
         aria-hidden
       />
 
-      {/* Panel — flush to the right viewport edge, no border-radius on right side */}
+      {/* Panel — floating card, detached from the viewport edges with rounded corners on all sides */}
       <div
-        className="fixed top-0 right-0 bottom-0 z-50 flex flex-col overflow-hidden animate-slide-right"
+        className="fixed z-50 flex flex-col overflow-hidden rounded-xl animate-slide-right"
         style={{
-          width: "min(520px, calc(100vw - 16px))",
+          top: 10,
+          right: 10,
+          bottom: 10,
+          width: "min(520px, calc(100vw - 20px))",
           background: "var(--bg-surface)",
-          borderLeft: "1px solid var(--border-color)",
-          boxShadow: "-14px 0 36px rgba(15, 19, 36, 0.12)",
+          border: "1px solid var(--border-color)",
+          boxShadow: "0 18px 50px rgba(15, 19, 36, 0.16)",
         }}
       >
         {/* Header */}
@@ -362,7 +365,7 @@ export default function DocumentPanel({ doc, onClose, onChanged }: DocumentPanel
         </div>
 
         {/* Scrollable body */}
-        <div className="flex-1 overflow-y-auto">
+        <div className="flex-1 overflow-y-auto no-scrollbar">
 
           {/* Metadata rows */}
           <div className="px-5 py-4" style={{ borderBottom: "1px solid var(--border-color)" }}>

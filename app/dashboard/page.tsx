@@ -2,12 +2,11 @@
 
 import { useCallback, useEffect, useState } from "react";
 import Image from "next/image";
-import { Eye, Link2, Upload, ArrowUpRight, Clock3, ExternalLink } from "lucide-react";
+import { Eye, Link2, Upload, ArrowUpRight, Clock3 } from "lucide-react";
 import type { DashboardActivity, DashboardData, DashboardDocument as Document } from "@/lib/dashboard-types";
 import DocumentPanel from "@/components/dashboard/DocumentPanel";
 import UploadModal from "@/components/dashboard/UploadModal";
 
-/* Map each doc type to a public icon and a colour tint */
 const typeConfig = {
   pitch_deck: { label: "Pitch Deck",  icon: "/document_icons/pdf.png", color: "#ef4444" },
   financials:  { label: "Financials",  icon: "/document_icons/xls.png", color: "#16a34a" },
@@ -33,8 +32,6 @@ export default function DashboardPage() {
   const [error, setError] = useState<string | null>(null);
 
   const loadDashboard = useCallback(async (opts?: { silent?: boolean }) => {
-    // A silent refresh (after upload / edits) keeps the current view on screen
-    // and swaps in fresh data — no full-page skeleton flash.
     if (!opts?.silent) setLoading(true);
     try {
       const response = await fetch("/api/documents", { cache: "no-store" });
@@ -50,7 +47,6 @@ export default function DashboardPage() {
     }
   }, []);
 
-  // Stable identity for post-mutation refreshes that shouldn't show skeletons.
   const refreshDashboard = useCallback(() => loadDashboard({ silent: true }), [loadDashboard]);
 
   useEffect(() => {
@@ -71,7 +67,6 @@ export default function DashboardPage() {
       <div
         className="px-8 py-8 w-full max-w-[860px] mx-auto flex-1"
       >
-        {/* ── Header ── */}
         <div className="flex items-center justify-between mb-8 animate-fade-up">
           <div>
             <h1 className="text-xl font-bold font-heading mb-0.5" style={{ color: "var(--text-primary)" }}>
@@ -96,7 +91,6 @@ export default function DashboardPage() {
           </button>
         </div>
 
-        {/* ── Document list ── */}
         <div
           className="rounded-md overflow-hidden animate-fade-up"
           style={{
@@ -105,7 +99,6 @@ export default function DashboardPage() {
             animationDelay: "40ms",
           }}
         >
-          {/* Header row */}
           <div
             className="grid items-center px-4 py-2.5 text-xs font-semibold"
             style={{
@@ -123,7 +116,6 @@ export default function DashboardPage() {
             <span />
           </div>
 
-          {/* Rows */}
           {error ? (
             <p className="px-4 py-8 text-sm" style={{ color: "var(--red)" }}>{error}</p>
           ) : loading ? (
@@ -170,7 +162,6 @@ export default function DashboardPage() {
                 tabIndex={0}
                 onKeyDown={(e) => e.key === "Enter" && setSelectedDoc(isSelected ? null : doc)}
               >
-                {/* Name + icon */}
                 <div className="flex items-center gap-3 min-w-0">
                   <Image
                     src={icon}
@@ -198,7 +189,6 @@ export default function DashboardPage() {
                   </div>
                 </div>
 
-                {/* Type badge */}
                 <span
                   className="text-xs font-medium px-2 py-1 rounded-md"
                   style={{ background: `${color}12`, color }}
@@ -206,7 +196,6 @@ export default function DashboardPage() {
                   {label}
                 </span>
 
-                {/* Views */}
                 <div className="flex items-center justify-end gap-1.5">
                   <Eye size={11} style={{ color: "var(--text-muted)" }} />
                   <span className="text-sm tabular-nums" style={{ color: "var(--text-primary)" }}>
@@ -214,7 +203,6 @@ export default function DashboardPage() {
                   </span>
                 </div>
 
-                {/* Links */}
                 <div className="flex items-center justify-end gap-1.5">
                   <Link2 size={11} style={{ color: "var(--text-muted)" }} />
                   <span className="text-sm tabular-nums" style={{ color: "var(--text-primary)" }}>
@@ -222,12 +210,10 @@ export default function DashboardPage() {
                   </span>
                 </div>
 
-                {/* Date */}
                 <p className="text-xs text-right" style={{ color: "var(--text-muted)" }}>
                   {relativeDate(doc.uploadedAt)}
                 </p>
 
-                {/* Arrow */}
                 <ArrowUpRight
                   size={13}
                   style={{
@@ -241,23 +227,14 @@ export default function DashboardPage() {
           })}
         </div>
 
-        {/* ── Recent activity ── */}
         <div className="mt-8 animate-fade-up" style={{ animationDelay: "80ms" }}>
-          <div className="flex items-end justify-between mb-3">
-            <div>
-              <p className="text-xs font-semibold tracking-wider" style={{ color: "var(--text-muted)" }}>
-                RECENT ACTIVITY
-              </p>
-              <p className="text-xs mt-1" style={{ color: "var(--text-muted)" }}>
-                Latest genuine sessions across your room
-              </p>
-            </div>
-            <button
-              className="hidden sm:flex items-center gap-1 text-xs font-semibold transition-opacity hover:opacity-70"
-              style={{ color: "var(--accent)" }}
-            >
-              View analytics <ExternalLink size={12} />
-            </button>
+          <div className="mb-3">
+            <p className="text-xs font-semibold tracking-wider" style={{ color: "var(--text-muted)" }}>
+              RECENT ACTIVITY
+            </p>
+            <p className="text-xs mt-1" style={{ color: "var(--text-muted)" }}>
+              Latest genuine sessions across your room
+            </p>
           </div>
           <div
             className="rounded-lg overflow-hidden"
@@ -315,7 +292,6 @@ export default function DashboardPage() {
         </div>
       </div>
 
-      {/* Panel + Upload */}
       <DocumentPanel key={selectedDoc?.id ?? "empty"} doc={selectedDoc} onClose={() => setSelectedDoc(null)} onChanged={refreshDashboard} />
       <UploadModal open={uploadOpen} onClose={() => setUploadOpen(false)} onUploaded={refreshDashboard} />
     </div>
