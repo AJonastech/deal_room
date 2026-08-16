@@ -1,6 +1,5 @@
 import Link from "next/link";
 import { LogOut } from "lucide-react";
-import Image from "next/image";
 import { redirect } from "next/navigation";
 import { requireUser } from "@/lib/auth";
 import { Logo } from "@/components/ui/logo";

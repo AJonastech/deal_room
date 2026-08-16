@@ -13,15 +13,11 @@ interface LogoProps {
   className?: string;
 }
 
-/**
- * DealRoom wordmark — a typographic logo set in Clash Display, with the
- * second half ("Room.") in the theme accent colour. Use anywhere the brand
- * needs to appear.
- */
+/** Dealroom wordmark set in the shared display face with an accent dot. */
 export function Logo({ size = "md", className }: LogoProps) {
   return (
     <span
-      aria-label="DealRoom"
+      aria-label="Dealroom"
       className={cn(
         "font-logo font-bold tracking-tight leading-none select-none",
         sizeMap[size],
@@ -29,8 +25,7 @@ export function Logo({ size = "md", className }: LogoProps) {
       )}
       style={{ color: "var(--text-primary)" }}
     >
-      Deal
-      <span style={{ color: "var(--accent)" }}>Room.</span>
+      Dealroom<span style={{ color: "var(--accent)" }}>.</span>
     </span>
   );
 }
