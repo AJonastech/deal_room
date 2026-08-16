@@ -1,0 +1,88 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+enum DocumentType {
+  pitch_deck
+  financials
+  term_sheet
+  data_room
+}
+
+model User {
+  id           String    @id @default(cuid())
+  email        String    @unique
+  passwordHash String    @map("password_hash")
+  name         String?
+  createdAt    DateTime  @default(now()) @map("created_at")
+  documents    Document[]
+  sessions     Session[]
+
+  @@map("users")
+}
+
+model Session {
+  id        String   @id @default(cuid())
+  token     String   @unique
+  userId    String   @map("user_id")
+  expiresAt DateTime @map("expires_at")
+  createdAt DateTime @default(now()) @map("created_at")
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, expiresAt])
+  @@map("sessions")
+}
+
+model Document {
+  id         String       @id @default(cuid())
+  ownerId    String       @map("owner_id")
+  name       String
+  storageKey String       @map("storage_key")
+  mimeType   String       @map("mime_type")
+  sizeBytes  BigInt       @map("size_bytes")
+  content    Bytes
+  type       DocumentType
+  createdAt  DateTime     @default(now()) @map("created_at")
+  updatedAt  DateTime     @updatedAt @map("updated_at")
+  owner      User         @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  shareLinks ShareLink[]
+
+  @@index([ownerId, createdAt])
+  @@map("documents")
+}
+
+model ShareLink {
+  id         String      @id @default(cuid())
+  documentId String      @map("document_id")
+  token      String      @unique
+  label      String
+  createdAt  DateTime    @default(now()) @map("created_at")
+  revokedAt  DateTime?   @map("revoked_at")
+  document   Document    @relation(fields: [documentId], references: [id], onDelete: Cascade)
+  viewEvents ViewEvent[]
+
+  @@index([documentId, revokedAt])
+  @@map("share_links")
+}
+
+model ViewEvent {
+  id              String    @id @default(cuid())
+  shareLinkId     String    @map("share_link_id")
+  sessionKey      String    @map("session_key")
+  openedAt        DateTime  @default(now()) @map("opened_at")
+  ipAddress       String?   @map("ip_address")
+  userAgent       String?   @map("user_agent")
+  sessionDuration Int?      @map("session_duration")
+  isBot           Boolean   @default(false) @map("is_bot")
+  shareLink       ShareLink @relation(fields: [shareLinkId], references: [id], onDelete: Cascade)
+
+  @@unique([shareLinkId, sessionKey])
+  @@index([shareLinkId, openedAt])
+  @@map("view_events")
+}

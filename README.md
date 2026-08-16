@@ -117,9 +117,9 @@ Before creating a link, I verify that the requested document belongs to the curr
 
 ### Investor View Registration
 
-When the investor page resolves a valid token, the backend checks revocation first and then records a server-timestamped event. The client supplies an opaque session key kept in `sessionStorage`; the backend also maintains an HTTP-only fallback cookie. The event insert uses `createMany(..., skipDuplicates: true)` together with the database uniqueness constraint, so duplicate or concurrent requests for the same link and session produce one row instead of relying on a vulnerable application-level check-then-insert.
+When the investor page resolves a valid token, the backend checks revocation first and then records a server-timestamped event. Known preview crawlers such as Slackbot, WhatsApp, and Facebook's link expander are served the response without creating engagement. A browser receives an opaque HTTP-only reader cookie; when cookies are unavailable, the server derives a one-way fallback fingerprint from the forwarded IP and user agent instead of persisting those values as identity.
 
-The current deduplication scope is one browser-tab session key for the lifetime of that session, not the plan's rolling 30-minute fingerprint window. I describe that difference in the limitations section below.
+The session identity is combined with a server-defined 30-minute UTC bucket. The event insert is protected by `@@unique([shareLinkId, sessionKey])`, and a uniqueness race is treated as an already-counted session. Repeated and concurrent requests in one window therefore produce one row, while the same reader can count again after the next boundary.
 
 ### Revocation and File Delivery
 
@@ -202,6 +202,8 @@ Password: batman_001
 | `npm run build` | Create a production build |
 | `npm run start` | Start the production server after a build |
 | `npm run lint` | Run ESLint |
+| `npm test` | Run fast unit tests without a database |
+| `npm run test:integration` | Run the PostgreSQL integration suite using `.env.local` |
 | `npm run db:generate` | Generate the Prisma client |
 | `npm run db:migrate` | Apply development migrations |
 | `npm run db:seed` | Seed the assessment founder account |
@@ -225,11 +227,10 @@ I treated this as an assessment-sized implementation and kept the unfinished pro
 
 ### View Tracking
 
-- **Bot filtering:** I capture user agents, but I have not yet added a known crawler classifier for Slackbot, WhatsApp, iMessage, email previews, or safe-link scanners. A production release should filter known agents before event insertion while still returning appropriate preview metadata.
-- **Deduplication window:** The current database constraint deduplicates one generated browser session per link. It does not expire after 30 minutes. I would derive a bounded session bucket from a server-controlled fingerprint or persist explicit session expiry to match the plan exactly.
 - **Registration point:** The view event is currently registered when the investor metadata route succeeds, immediately before the page requests the file. The target architecture logs at the file-serving boundary. I would consolidate token resolution and event registration into the serving path so a metadata request alone cannot count as a read.
-- **Retry idempotency:** Session uniqueness protects repeated requests in one browser session, but there is no separate request idempotency key for retries across changing sessions.
-- **Fingerprint tradeoff:** A new tab or device can create a new session, while repeated reads in the same tab remain one session. This is a pragmatic demo behavior, not a claim of person-level identity.
+- **Crawler coverage:** The classifier covers common user-agent signatures, but production traffic would require monitored allow/deny rules for security scanners and new preview clients.
+- **Window semantics:** Buckets are fixed 30-minute boundaries rather than a rolling 30-minute expiry from the first open. This makes the key deterministic and race-safe, but a reader opening immediately on either side of a boundary can create two events.
+- **Fingerprint tradeoff:** The cookie identifies a browser, not a person. Clearing cookies, switching browsers, or forwarding a link can create a distinct session, which is intentional for engagement analytics but not person-level identity.
 
 ### Storage and Delivery
 
@@ -239,20 +240,12 @@ I treated this as an assessment-sized implementation and kept the unfinished pro
 
 ### Testing
 
-There is no automated test suite in the current submission. The first tests I would add are the high-risk cases identified in the brief:
+The repository includes two focused layers:
 
-1. Known bot user agents do not create view events.
-2. Multiple requests in one deduplication window create exactly one event.
-3. Requests immediately inside and outside the window produce the expected session count.
-4. Concurrent inserts for one session remain one row because of the database constraint.
-5. Different session fingerprints create distinct events.
-6. Revoked links return no metadata or bytes and create no event.
-7. Client timestamps are ignored in favor of database/server time.
-8. Retried logical requests remain idempotent.
-9. Uploads persist the correct owner, name, storage key, and bytes.
-10. A founder cannot read, link, download, or delete another founder's document.
+- `npm test` checks password hashing, bot classification, fixed-window boundaries, server timestamps, fallback fingerprints, uniqueness races, and error propagation without requiring PostgreSQL.
+- `npm run test:integration` uses the configured PostgreSQL database and isolated temporary records to verify document persistence, random token shape, active versus expired sessions, owner isolation, concurrent deduplication, retry boundaries, crawler suppression, forwarded readers, and revocation ordering. The suite deletes its records after each run.
 
-I would implement pure unit tests for bot classification and session-bucket calculation, then integration tests against PostgreSQL for concurrency, ownership, revocation, uploads, and the full investor request path.
+The remaining test gap is browser-level coverage of the complete login, multipart upload, public viewer, download, and revoke workflow. The route handlers and persistence boundaries are exercised by type checking, production builds, and the database suite, but the HTTP cookie and UI transitions are not yet automated end to end.
 
 ### Product Scope
 
@@ -266,8 +259,8 @@ Before treating this as a production deal room, I would prioritize the work in t
 
 1. Move file bytes to private object storage.
 2. Register views in the actual serving path.
-3. Add bot filtering and a server-defined 30-minute session bucket.
-4. Add request idempotency and integration coverage for concurrent opens.
+3. Expand crawler detection with monitored production signatures and security-scanner policy.
+4. Add browser-level end-to-end coverage for the complete founder and investor workflow.
 5. Add rate limiting, audit logs, CSRF review, and stricter response security headers.
 6. Add link expiration and optional download controls.
 7. Add observability for failed uploads, rejected links, and event-registration errors.
@@ -290,11 +283,13 @@ lib/
   dashboard-types.ts           Frontend/API dashboard contracts
   password.ts                  scrypt password hashing and verification
   prisma.ts                    Prisma client lifecycle
+  view-tracking.ts             Bot filtering, fingerprints, and atomic view registration
 prisma/
   migrations/                  Versioned PostgreSQL schema changes
   schema.prisma                Relational data model and constraints
   seed.mjs                     Assessment founder seed
 public/document_icons/         Document-type assets
+tests/                         Unit and PostgreSQL integration coverage
 ```
 
 ## Final Note
