@@ -1,7 +1,3 @@
-# Dealroom.
-
-Dealroom is my full-stack technical assessment for controlled fundraising document sharing and investor engagement tracking. I built the core founder workflow end to end: authenticate, upload a document, create an unguessable share link, send it to an investor, and review the resulting activity from the dashboard.
-
 ## Start Here: Reviewer Access
 
 After starting the application, open [http://localhost:3000](http://localhost:3000) and sign in with:
